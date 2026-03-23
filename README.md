@@ -22,15 +22,6 @@ A highly optimized, fully stateless web application designed to track medication
 
 ---
 
-## Team & Ownership
-
-**Bean** - Creator, Inventor, Visionary, Co-Founder & CEO  
-**Peanut** - Consigliere & Co-Founder  
-
-> **LEGAL NOTICE:** BEAN HOLDS ALL LIABILITY AND RESPONSIBILITY FOR EVERYTHING THAT IS INCLUDED, STORED, AND GENERATED FROM THIS. ALL IP IS GENERATED FROM BEAN.
-
----
-
 ## System Overview
 
 The Medication Refill Calculator eliminates the guesswork from prescription management. By entering a fill date, supply length, and daily dosage, the system instantly computes the exact day a refill is required. 
@@ -42,7 +33,7 @@ The Medication Refill Calculator eliminates the guesswork from prescription mana
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 * **Intelligent Date Parser:** Accepts over 50 date formats, relative dates ("yesterday"), and fuzzy matches ("Novmber 15th").
 * **Smart Defaults:** Automatically assumes a 30-day medication supply if left blank.
