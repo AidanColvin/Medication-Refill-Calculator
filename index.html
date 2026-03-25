@@ -1,33 +1,543 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>Medication Refill Calculator</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.63.1/build/stlite.css" />
-  </head>
-  <body>
-    <div id="root"></div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.63.1/build/stlite.js"></script>
-    <script>
-      stlite.mount(
-        {
-          entrypoint: "app.py",
-          files: {
-            "app.py": {
-              // Pulls directly from your raw GitHub code
-              url: "https://raw.githubusercontent.com/AidanColvin/Medication-Refill-Calculator/main/src/app.py"
-            },
-            "core_logic.py": {
-              // Pulls directly from your raw GitHub code
-              url: "https://raw.githubusercontent.com/AidanColvin/Medication-Refill-Calculator/main/src/core_logic.py"
-            }
-          },
-        },
-        document.getElementById("root")
-      );
-    </script>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Medication Refill Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #F5F2ED;
+      --card:      #FFFCF7;
+      --border:    #DDD9D0;
+      --ink:       #1A1714;
+      --muted:     #7A756E;
+      --accent:    #C85A2A;
+      --accent-lt: #F5E8E0;
+      --green:     #2A6B3C;
+      --green-lt:  #E0F0E5;
+      --amber:     #B57A1A;
+      --amber-lt:  #FBF2DC;
+      --red:       #B52A2A;
+      --red-lt:    #F5E0E0;
+      --radius:    12px;
+      --shadow:    0 2px 16px rgba(26,23,20,0.08);
+    }
+
+    html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 24px 16px env(safe-area-inset-bottom, 16px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .page-wrap {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* Header */
+    header {
+      padding: 32px 0 24px;
+      text-align: left;
+    }
+    .pill-icon {
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.7rem, 5vw, 2.2rem);
+      line-height: 1.15;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 300;
+      line-height: 1.5;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* Form fields */
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 300;
+      margin-left: 4px;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 12px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      color: var(--ink);
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(200, 90, 42, 0.12);
+    }
+    input::placeholder { color: var(--muted); }
+
+    .row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 380px) {
+      .row-3 { grid-template-columns: 1fr 1fr; }
+      .row-3 .field:last-child { grid-column: 1 / -1; }
+    }
+
+    /* Button */
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:hover  { background: #B04E24; }
+    button:active { transform: scale(0.98); }
+
+    /* Results */
+    #results { display: none; }
+
+    .alert {
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      border: 1.5px solid transparent;
+    }
+    .alert-error  { background: var(--red-lt);   border-color: rgba(181,42,42,0.25);  color: var(--red); }
+    .alert-warn   { background: var(--amber-lt);  border-color: rgba(181,122,26,0.25); color: var(--amber); }
+    .alert-ok     { background: var(--green-lt);  border-color: rgba(42,107,60,0.25);  color: var(--green); }
+
+    .alert strong { font-weight: 600; }
+
+    .meta-line {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Metrics grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 4px;
+    }
+    @media (max-width: 360px) {
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .metric-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+    .metric-val {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      color: var(--ink);
+      line-height: 1;
+      display: block;
+    }
+    .metric-lbl {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 4px;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: block;
+    }
+
+    /* Divider */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 4px 0 16px;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding: 24px 0 8px;
+      line-height: 1.6;
+    }
+
+    /* Animation */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.3s ease forwards; }
+
+    /* Twemoji — make emoji images match text size & align */
+    img.emoji {
+      height: 1.1em;
+      width: 1.1em;
+      vertical-align: -0.15em;
+      display: inline-block;
+    }
+    .pill-icon img.emoji {
+      height: 2rem;
+      width: 2rem;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <header>
+    <span class="pill-icon">💊</span>
+    <h1>Medication Refill<br>Calculator</h1>
+    <p class="subtitle">Fast &amp; private — no data saved or shared.</p>
+  </header>
+
+  <div class="card">
+    <p class="section-label">Prescription Details</p>
+
+    <div class="field">
+      <label for="lastFilled">Date Last Filled <span class="hint">(required)</span></label>
+      <input type="text" id="lastFilled" placeholder="e.g. Nov 15, today, 11/15/2024" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    </div>
+
+    <div class="row-3">
+      <div class="field">
+        <label for="daySupply">Day Supply</label>
+        <input type="number" id="daySupply" value="30" min="1" max="365" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="quantity">Total Pills <span class="hint">(opt)</span></label>
+        <input type="number" id="quantity" value="" min="0" placeholder="0" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="takenPerDay">Pills/Day <span class="hint">(opt)</span></label>
+        <input type="number" id="takenPerDay" value="" min="0" step="0.5" placeholder="0" inputmode="decimal" />
+      </div>
+    </div>
+
+    <button onclick="runCalc()">Calculate Refill</button>
+  </div>
+
+  <div id="results"></div>
+
+  <footer>
+    All calculations happen locally in your browser.<br>No information is transmitted or stored.
+  </footer>
+
+</div>
+
+<script>
+// ─── Date Parsing ────────────────────────────────────────────────────────────
+
+var MONTH_MAP = {
+  january:1, jan:1, february:2, feb:2, march:3, mar:3,
+  april:4, apr:4, may:5, june:6, jun:6, july:7, jul:7,
+  august:8, aug:8, september:9, sep:9, sept:9, october:10, oct:10,
+  november:11, nov:11, december:12, dec:12
+};
+
+var TYPOS = [
+  [/\b(januray|janury|janaury)\b/gi, 'January'],
+  [/\b(febuary|feburary|febrary)\b/gi, 'February'],
+  [/\b(marhc|marcg)\b/gi, 'March'],
+  [/\b(arpil|apirl|paril)\b/gi, 'April'],
+  [/\b(juen|jne)\b/gi, 'June'],
+  [/\b(jully|juy)\b/gi, 'July'],
+  [/\b(auguts|agust)\b/gi, 'August'],
+  [/\b(septmber|setember)\b/gi, 'September'],
+  [/\b(ocotber|octber)\b/gi, 'October'],
+  [/\b(novmber|noveber|nvember)\b/gi, 'November'],
+  [/\b(decmber|deceber|dcember)\b/gi, 'December']
+];
+
+function today() {
+  var d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function safeDate(y, m, d) {
+  var dt = new Date(y, m - 1, d);
+  if (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) return dt;
+  return null;
+}
+
+function parseDate(raw) {
+  if (!raw || !raw.trim()) throw new Error('Please enter the date your prescription was last filled.');
+
+  var now = today();
+  var s = raw.trim();
+
+  // Fix typos
+  for (var i = 0; i < TYPOS.length; i++) s = s.replace(TYPOS[i][0], TYPOS[i][1]);
+
+  // Remove ordinals: 1st → 1
+  s = s.replace(/(\d+)(st|nd|rd|th)\b/gi, '$1');
+
+  var sl = s.toLowerCase();
+
+  // Relative keywords
+  if (sl === 'today' || sl === 'now') return now;
+  if (sl === 'yesterday') return addDays(now, -1);
+  if (sl === 'tomorrow')  return addDays(now, 1);
+
+  // "X days/weeks ago"
+  var agoM = sl.match(/^(\d+)\s*(day|week|month|year)s?\s*ago$/);
+  if (agoM) {
+    var n = parseInt(agoM[1], 10), unit = agoM[2];
+    if (unit === 'day')   return addDays(now, -n);
+    if (unit === 'week')  return addDays(now, -n * 7);
+    if (unit === 'month') return addDays(now, -n * 30);
+    if (unit === 'year')  return addDays(now, -n * 365);
+  }
+
+  // Standard format attempts — NOTE: always use explicit parsing to avoid
+  // Safari's broken behavior with new Date("2024-11-15")
+  var yr = now.getFullYear();
+
+  // MM/DD/YYYY or MM-DD-YYYY or MM.DD.YYYY
+  var m1 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (m1) { var d = safeDate(+m1[3], +m1[1], +m1[2]); if (d) return d; }
+
+  // YYYY-MM-DD (ISO — explicit parse to avoid Safari bug)
+  var m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m2) { var d = safeDate(+m2[1], +m2[2], +m2[3]); if (d) return d; }
+
+  // MM/DD/YY
+  var m3 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})$/);
+  if (m3) { var d = safeDate(2000 + (+m3[3]), +m3[1], +m3[2]); if (d) return d; }
+
+  // MM/DD  (no year)
+  var m4 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})$/);
+  if (m4) { var d = safeDate(yr, +m4[1], +m4[2]); if (d) return d; }
+
+  // Month name + day + optional year:  "Nov 15 2024", "November 15", etc.
+  var monthNum = null;
+  for (var name in MONTH_MAP) {
+    if (sl.indexOf(name) !== -1) { monthNum = MONTH_MAP[name]; break; }
+  }
+  if (monthNum) {
+    var dayM  = sl.match(/\b(\d{1,2})\b/);
+    var yearM = sl.match(/\b(19|20)(\d{2})\b/);
+    if (dayM) {
+      var parsedYear = yearM ? parseInt(yearM[0], 10) : yr;
+      var d = safeDate(parsedYear, monthNum, +dayM[1]);
+      if (d) return d;
+    }
+  }
+
+  throw new Error('Unable to parse "' + raw + '". Try a format like 11/15/2024 or Nov 15 2024.');
+}
+
+function addDays(dt, n) {
+  var d = new Date(dt);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function daysBetween(a, b) {
+  return Math.round((b - a) / 86400000);
+}
+
+function fmtDate(dt) {
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[dt.getMonth()] + ' ' + dt.getDate() + ', ' + dt.getFullYear();
+}
+
+// ─── Core Logic ──────────────────────────────────────────────────────────────
+
+function calcMetrics(lastFilled, daySupply, quantity, takenPerDay) {
+  var fillDate   = parseDate(lastFilled);
+  var todayDate  = today();
+  var daysElapsed = daysBetween(fillDate, todayDate);
+  var currentDayNum = daysElapsed + 1;
+
+  var refillOffset = daySupply > 2 ? Math.min(28, daySupply - 2) : daySupply;
+  var refillDate   = addDays(fillDate, refillOffset - 1);
+  var daysUntil    = Math.max(0, daysBetween(todayDate, refillDate));
+
+  var result = {
+    fillDate: fillDate,
+    todayDate: todayDate,
+    daysElapsed: daysElapsed,
+    currentDayNum: currentDayNum,
+    refillDate: refillDate,
+    daysUntil: daysUntil,
+    daySupply: daySupply,
+    hasQty: false
+  };
+
+  if (quantity != null && takenPerDay != null && takenPerDay > 0) {
+    var taken = Math.round(daysElapsed * takenPerDay * 10) / 10;
+    var left  = Math.max(0, quantity - taken);
+    var daysLeft = Math.round(left / takenPerDay * 10) / 10;
+    result.hasQty     = true;
+    result.quantity   = quantity;
+    result.taken      = taken;
+    result.left       = left;
+    result.daysLeft   = daysLeft;
+  }
+
+  return result;
+}
+
+// ─── UI ──────────────────────────────────────────────────────────────────────
+
+function fmt(n) {
+  // Format number: remove trailing .0
+  return (n % 1 === 0) ? String(n) : String(n);
+}
+
+function runCalc() {
+  var lastFilled  = document.getElementById('lastFilled').value.trim();
+  var daySupply   = parseInt(document.getElementById('daySupply').value, 10) || 30;
+  var qtyRaw      = document.getElementById('quantity').value.trim();
+  var tpdRaw      = document.getElementById('takenPerDay').value.trim();
+
+  var quantity    = qtyRaw   !== '' && +qtyRaw   > 0 ? parseFloat(qtyRaw)   : null;
+  var takenPerDay = tpdRaw   !== '' && +tpdRaw   > 0 ? parseFloat(tpdRaw)   : null;
+
+  var el = document.getElementById('results');
+
+  if (!lastFilled) {
+    el.style.display = 'block';
+    el.innerHTML = '<div class="alert alert-error fade-up">⚠️ Please enter the date your prescription was last filled.</div>';
+    return;
+  }
+
+  var m;
+  try {
+    m = calcMetrics(lastFilled, daySupply, quantity, takenPerDay);
+  } catch(e) {
+    el.style.display = 'block';
+    el.innerHTML = '<div class="alert alert-error fade-up">⚠️ ' + e.message + '</div>';
+    return;
+  }
+
+  var html = '';
+
+  // Refill status alert
+  if (m.daysUntil === 0) {
+    html += '<div class="alert alert-error fade-up">⚠️ Refill is <strong>due today or overdue</strong>. Target date was ' + fmtDate(m.refillDate) + '.</div>';
+  } else if (m.daysUntil <= 3) {
+    html += '<div class="alert alert-warn fade-up">⏳ Refill due in <strong>' + m.daysUntil + ' day' + (m.daysUntil === 1 ? '' : 's') + '</strong> — on ' + fmtDate(m.refillDate) + '.</div>';
+  } else {
+    html += '<div class="alert alert-ok fade-up">✅ Refill due in <strong>' + m.daysUntil + ' days</strong> — on ' + fmtDate(m.refillDate) + '.</div>';
+  }
+
+  // Timeline card
+  html += '<div class="card fade-up">';
+  html += '<p class="section-label">Refill Timeline</p>';
+  html += '<hr>';
+  html += '<div class="metrics-grid">';
+  html += '<div class="metric-box"><span class="metric-val">' + m.daysUntil + '</span><span class="metric-lbl">Days Until Refill</span></div>';
+  html += '<div class="metric-box"><span class="metric-val">' + m.currentDayNum + '</span><span class="metric-lbl">Day ' + m.currentDayNum + ' of ' + m.daySupply + '</span></div>';
+  html += '<div class="metric-box"><span class="metric-val">' + m.daysElapsed + '</span><span class="metric-lbl">Days Elapsed</span></div>';
+  html += '</div>';
+  html += '<p class="meta-line" style="margin-top:14px">Filled: ' + fmtDate(m.fillDate) + ' &nbsp;·&nbsp; Target refill: ' + fmtDate(m.refillDate) + '</p>';
+  html += '</div>';
+
+  // Supply status card (optional)
+  if (m.hasQty) {
+    html += '<div class="card fade-up">';
+    html += '<p class="section-label">Supply Status</p>';
+    html += '<hr>';
+    html += '<div class="metrics-grid">';
+    html += '<div class="metric-box"><span class="metric-val">' + fmt(m.taken) + '</span><span class="metric-lbl">Should Have Taken</span></div>';
+    html += '<div class="metric-box"><span class="metric-val">' + fmt(m.left) + '</span><span class="metric-lbl">Should Have Left</span></div>';
+    html += '<div class="metric-box"><span class="metric-val">' + fmt(m.daysLeft) + '</span><span class="metric-lbl">Days of Supply Left</span></div>';
+    html += '</div>';
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+  el.style.display = 'block';
+  twemoji.parse(el, { folder: 'svg', ext: '.svg' });
+
+  // Scroll results into view on mobile
+  setTimeout(function() {
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
+}
+
+// Allow Enter key to submit
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') runCalc();
+});
+
+// Parse emoji on initial load
+twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
+</script>
+</body>
 </html>
