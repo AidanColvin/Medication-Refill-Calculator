@@ -4,11 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Medication Refill Calculator</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+
   <style>
+    /* --- YOUR ORIGINAL UI (UNCHANGED) --- */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
       --bg:#F5F2ED;--card:#FFFCF7;--border:#DDD9D0;--ink:#1A1714;
       --muted:#7A756E;--accent:#C85A2A;--accent-lt:#F5E8E0;
@@ -16,23 +20,67 @@
       --amber-lt:#FBF2DC;--red:#B52A2A;--red-lt:#F5E0E0;
       --radius:12px;--shadow:0 2px 16px rgba(26,23,20,0.08);
     }
-    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);
-      padding:24px 16px;display:flex;justify-content:center}
+
+    body {
+      font-family:'DM Sans',sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      padding:24px 16px;
+      display:flex;
+      justify-content:center;
+    }
+
     .page-wrap{max-width:520px;width:100%}
     h1{font-family:'DM Serif Display',serif;font-size:2rem;margin-bottom:8px}
-    .card{background:var(--card);border:1px solid var(--border);
-      border-radius:12px;padding:24px;margin-bottom:16px}
-    input{width:100%;padding:12px;margin-top:6px;border-radius:8px;border:1px solid var(--border)}
-    button{width:100%;padding:14px;margin-top:20px;background:var(--accent);color:#fff;border:none;border-radius:8px}
-    .metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-    .metric-box{text-align:center;padding:10px;background:var(--bg);border:1px solid var(--border)}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:24px;
+      margin-bottom:16px
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      margin-top:6px;
+      border-radius:8px;
+      border:1px solid var(--border)
+    }
+
+    button{
+      width:100%;
+      padding:14px;
+      margin-top:20px;
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      border-radius:8px
+    }
+
+    .metrics-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px
+    }
+
+    .metric-box{
+      text-align:center;
+      padding:10px;
+      background:var(--bg);
+      border:1px solid var(--border)
+    }
+
     .metric-val{font-size:1.4rem}
+
     .alert{padding:12px;border-radius:8px;margin-bottom:10px}
     .alert-error{background:var(--red-lt);color:var(--red)}
     .alert-warn{background:var(--amber-lt);color:var(--amber)}
     .alert-ok{background:var(--green-lt);color:var(--green)}
   </style>
 </head>
+
 <body>
 <div class="page-wrap">
 
@@ -60,36 +108,88 @@
 
 <script>
 
-// -------- DATE (unchanged) --------
-function today(){let d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
-function addDays(d,n){let x=new Date(d);x.setDate(x.getDate()+n);return x;}
-function daysBetween(a,b){return Math.round((b-a)/86400000);}
+/**
+ * Return today's date with time zeroed out
+ */
+function today(){
+  let d=new Date();
+  return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+}
+
+/**
+ * Add N days to a date
+ */
+function addDays(d,n){
+  let x=new Date(d);
+  x.setDate(x.getDate()+n);
+  return x;
+}
+
+/**
+ * Days between two dates
+ */
+function daysBetween(a,b){
+  return Math.round((b-a)/86400000);
+}
+
+/**
+ * Basic parsing (kept simple per your original)
+ */
 function parseDate(s){
   if(!s) throw Error("Enter date");
   if(s.toLowerCase()==="today") return today();
-  return new Date(s);
-}
-function fmtDate(d){return d.toLocaleDateString();}
 
-// -------- FIXED CORE --------
+  let d=new Date(s);
+  if(isNaN(d)) throw Error("Invalid date format");
+
+  return d;
+}
+
+/**
+ * Safe number guard (prevents NaN / Infinity)
+ */
+function safe(n){
+  return (isFinite(n) && !isNaN(n)) ? n : 0;
+}
+
+/**
+ * Format date for UI
+ */
+function fmtDate(d){
+  return d.toLocaleDateString();
+}
+
+/**
+ * Core calculation engine (hardened)
+ */
 function calcMetrics(lastFilled, daySupply, quantity, takenPerDay){
 
   let fillDate=parseDate(lastFilled);
   let now=today();
 
+  // 🚨 Reject future dates
+  if(fillDate > now){
+    throw Error("Fill date cannot be in the future.");
+  }
+
   let daysElapsed=Math.max(0,daysBetween(fillDate,now));
   let currentDayNum=daysElapsed+1;
 
+  // --- Infer supply ---
   let implied=null;
   if(quantity && takenPerDay>0){
     implied=quantity/takenPerDay;
   }
 
   let effective=daySupply;
+
   if(implied && Math.abs(implied-daySupply)/daySupply>0.2){
     effective=implied;
   }
 
+  /**
+   * Smarter refill rule
+   */
   function refillRule(ds){
     if(ds<=7) return ds;
     if(ds<=30) return ds-2;
@@ -100,15 +200,25 @@ function calcMetrics(lastFilled, daySupply, quantity, takenPerDay){
   let daysUntil=Math.max(0,daysBetween(now,refillDate));
 
   let result={
-    fillDate,daysElapsed,currentDayNum,
-    refillDate,daysUntil,daySupply:Math.round(effective),
-    hasQty:false,warning:null
+    fillDate,
+    daysElapsed,
+    currentDayNum,
+    refillDate,
+    daysUntil,
+    daySupply:Math.round(effective),
+    hasQty:false,
+    warning:null
   };
 
+  // --- Quantity math ---
   if(quantity && takenPerDay>0){
-    let taken=daysElapsed*takenPerDay;
-    let left=Math.max(0,quantity-taken);
-    let daysLeft=left/takenPerDay;
+
+    let taken=safe(daysElapsed*takenPerDay);
+    let left=safe(quantity-taken);
+
+    if(left<0) left=0;
+
+    let daysLeft=safe(left/takenPerDay);
 
     result.hasQty=true;
     result.taken=taken;
@@ -120,20 +230,42 @@ function calcMetrics(lastFilled, daySupply, quantity, takenPerDay){
     }
   }
 
+  // 🚨 Extreme warnings
+  if(daysElapsed>3650){
+    result.warning="⚠️ Very old prescription — verify inputs";
+  }
+
+  if(result.daysLeft && result.daysLeft>3650){
+    result.warning="⚠️ Extremely large supply — check values";
+  }
+
   return result;
 }
 
-// -------- UI --------
+/**
+ * Main UI runner with input guards
+ */
 function runCalc(){
 
   let lastFilled=document.getElementById("lastFilled").value;
+
   let daySupply=parseInt(document.getElementById("daySupply").value)||30;
   let quantity=parseFloat(document.getElementById("quantity").value)||null;
   let takenPerDay=parseFloat(document.getElementById("takenPerDay").value)||null;
 
+  // 🔒 Clamp values
+  daySupply=Math.min(Math.max(daySupply,1),365);
+  if(quantity!==null) quantity=Math.min(quantity,10000);
+  if(takenPerDay!==null) takenPerDay=Math.min(takenPerDay,24);
+
   let m;
-  try{m=calcMetrics(lastFilled,daySupply,quantity,takenPerDay);}
-  catch(e){return alert(e.message);}
+  try{
+    m=calcMetrics(lastFilled,daySupply,quantity,takenPerDay);
+  }catch(e){
+    document.getElementById("results").innerHTML=
+      `<div class="alert alert-error">${e.message}</div>`;
+    return;
+  }
 
   let html="";
 
