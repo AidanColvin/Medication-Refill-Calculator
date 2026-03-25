@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Medication Refill Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#F5F2ED;--card:#FFFCF7;--border:#DDD9D0;--ink:#1A1714;
+      --muted:#7A756E;--accent:#C85A2A;--accent-lt:#F5E8E0;
+      --green:#2A6B3C;--green-lt:#E0F0E5;--amber:#B57A1A;
+      --amber-lt:#FBF2DC;--red:#B52A2A;--red-lt:#F5E0E0;
+      --radius:12px;--shadow:0 2px 16px rgba(26,23,20,0.08);
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);
+      padding:24px 16px;display:flex;justify-content:center}
+    .page-wrap{max-width:520px;width:100%}
+    h1{font-family:'DM Serif Display',serif;font-size:2rem;margin-bottom:8px}
+    .card{background:var(--card);border:1px solid var(--border);
+      border-radius:12px;padding:24px;margin-bottom:16px}
+    input{width:100%;padding:12px;margin-top:6px;border-radius:8px;border:1px solid var(--border)}
+    button{width:100%;padding:14px;margin-top:20px;background:var(--accent);color:#fff;border:none;border-radius:8px}
+    .metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .metric-box{text-align:center;padding:10px;background:var(--bg);border:1px solid var(--border)}
+    .metric-val{font-size:1.4rem}
+    .alert{padding:12px;border-radius:8px;margin-bottom:10px}
+    .alert-error{background:var(--red-lt);color:var(--red)}
+    .alert-warn{background:var(--amber-lt);color:var(--amber)}
+    .alert-ok{background:var(--green-lt);color:var(--green)}
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+<h1>Medication Refill 💊</h1>
+
+<div class="card">
+  <label>Date Last Filled</label>
+  <input id="lastFilled" placeholder="Nov 15, today, 11/15/2024">
+
+  <label>Day Supply</label>
+  <input id="daySupply" type="number" value="30">
+
+  <label>Total Pills</label>
+  <input id="quantity" type="number">
+
+  <label>Pills/Day</label>
+  <input id="takenPerDay" type="number" step="0.5">
+
+  <button onclick="runCalc()">Calculate</button>
+</div>
+
+<div id="results"></div>
+
+</div>
+
+<script>
+
+// -------- DATE (unchanged) --------
+function today(){let d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function addDays(d,n){let x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function daysBetween(a,b){return Math.round((b-a)/86400000);}
+function parseDate(s){
+  if(!s) throw Error("Enter date");
+  if(s.toLowerCase()==="today") return today();
+  return new Date(s);
+}
+function fmtDate(d){return d.toLocaleDateString();}
+
+// -------- FIXED CORE --------
+function calcMetrics(lastFilled, daySupply, quantity, takenPerDay){
+
+  let fillDate=parseDate(lastFilled);
+  let now=today();
+
+  let daysElapsed=Math.max(0,daysBetween(fillDate,now));
+  let currentDayNum=daysElapsed+1;
+
+  let implied=null;
+  if(quantity && takenPerDay>0){
+    implied=quantity/takenPerDay;
+  }
+
+  let effective=daySupply;
+  if(implied && Math.abs(implied-daySupply)/daySupply>0.2){
+    effective=implied;
+  }
+
+  function refillRule(ds){
+    if(ds<=7) return ds;
+    if(ds<=30) return ds-2;
+    return Math.floor(ds*0.9);
+  }
+
+  let refillDate=addDays(fillDate,refillRule(effective)-1);
+  let daysUntil=Math.max(0,daysBetween(now,refillDate));
+
+  let result={
+    fillDate,daysElapsed,currentDayNum,
+    refillDate,daysUntil,daySupply:Math.round(effective),
+    hasQty:false,warning:null
+  };
+
+  if(quantity && takenPerDay>0){
+    let taken=daysElapsed*takenPerDay;
+    let left=Math.max(0,quantity-taken);
+    let daysLeft=left/takenPerDay;
+
+    result.hasQty=true;
+    result.taken=taken;
+    result.left=left;
+    result.daysLeft=daysLeft;
+
+    if(implied && Math.abs(implied-daySupply)/daySupply>0.2){
+      result.warning="⚠️ Inconsistent inputs — adjusted supply used";
+    }
+  }
+
+  return result;
+}
+
+// -------- UI --------
+function runCalc(){
+
+  let lastFilled=document.getElementById("lastFilled").value;
+  let daySupply=parseInt(document.getElementById("daySupply").value)||30;
+  let quantity=parseFloat(document.getElementById("quantity").value)||null;
+  let takenPerDay=parseFloat(document.getElementById("takenPerDay").value)||null;
+
+  let m;
+  try{m=calcMetrics(lastFilled,daySupply,quantity,takenPerDay);}
+  catch(e){return alert(e.message);}
+
+  let html="";
+
+  if(m.warning){
+    html+=`<div class="alert alert-warn">${m.warning}</div>`;
+  }
+
+  if(m.daysUntil===0){
+    html+=`<div class="alert alert-error">Refill due now</div>`;
+  }else if(m.daysUntil<3){
+    html+=`<div class="alert alert-warn">Refill soon (${m.daysUntil} days)</div>`;
+  }else{
+    html+=`<div class="alert alert-ok">Refill in ${m.daysUntil} days</div>`;
+  }
+
+  html+=`
+  <div class="card">
+    <div class="metrics-grid">
+      <div class="metric-box"><div class="metric-val">${m.daysUntil}</div>Days Until</div>
+      <div class="metric-box"><div class="metric-val">${m.currentDayNum}</div>Day #</div>
+      <div class="metric-box"><div class="metric-val">${m.daysElapsed}</div>Elapsed</div>
+    </div>
+    <p>Filled: ${fmtDate(m.fillDate)}</p>
+    <p>Refill: ${fmtDate(m.refillDate)}</p>
+  </div>`;
+
+  if(m.hasQty){
+    html+=`
+    <div class="card">
+      <div class="metrics-grid">
+        <div class="metric-box">${m.taken.toFixed(1)} Taken</div>
+        <div class="metric-box">${m.left.toFixed(1)} Left</div>
+        <div class="metric-box">${m.daysLeft.toFixed(1)} Days Left</div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById("results").innerHTML=html;
+}
+
+</script>
+</body>
+</html>
