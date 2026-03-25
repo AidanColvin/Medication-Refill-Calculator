@@ -4,308 +4,985 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Medication Refill Calculator</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
 
   <style>
-    /* --- YOUR ORIGINAL UI (UNCHANGED) --- */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:#F5F2ED;--card:#FFFCF7;--border:#DDD9D0;--ink:#1A1714;
-      --muted:#7A756E;--accent:#C85A2A;--accent-lt:#F5E8E0;
-      --green:#2A6B3C;--green-lt:#E0F0E5;--amber:#B57A1A;
-      --amber-lt:#FBF2DC;--red:#B52A2A;--red-lt:#F5E0E0;
-      --radius:12px;--shadow:0 2px 16px rgba(26,23,20,0.08);
+      --bg:        #F5F2ED;
+      --card:      #FFFCF7;
+      --border:    #DDD9D0;
+      --ink:       #1A1714;
+      --muted:     #7A756E;
+      --accent:    #C85A2A;
+      --accent-lt: #F5E8E0;
+      --green:     #2A6B3C;
+      --green-lt:  #E0F0E5;
+      --amber:     #B57A1A;
+      --amber-lt:  #FBF2DC;
+      --red:       #B52A2A;
+      --red-lt:    #F5E0E0;
+      --radius:    12px;
+      --shadow:    0 2px 16px rgba(26,23,20,0.08);
     }
+
+    html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 
     body {
-      font-family:'DM Sans',sans-serif;
-      background:var(--bg);
-      color:var(--ink);
-      padding:24px 16px;
-      display:flex;
-      justify-content:center;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 24px 16px env(safe-area-inset-bottom, 16px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    .page-wrap{max-width:520px;width:100%}
-    h1{font-family:'DM Serif Display',serif;font-size:2rem;margin-bottom:8px}
+    .page-wrap { width: 100%; max-width: 520px; }
 
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:24px;
-      margin-bottom:16px
+    header { padding: 32px 0 24px; text-align: left; }
+    .pill-icon { display: inline; font-size: inherit; margin-left: 0.2em; line-height: 1; }
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.7rem, 5vw, 2.2rem);
+      line-height: 1.2;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .subtitle { font-size: 0.85rem; color: var(--muted); font-weight: 300; line-height: 1.5; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
     }
 
-    input{
-      width:100%;
-      padding:12px;
-      margin-top:6px;
-      border-radius:8px;
-      border:1px solid var(--border)
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
     }
 
-    button{
-      width:100%;
-      padding:14px;
-      margin-top:20px;
-      background:var(--accent);
-      color:#fff;
-      border:none;
-      border-radius:8px
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+
+    label { display: block; font-size: 0.82rem; font-weight: 500; color: var(--ink); margin-bottom: 6px; }
+    .hint { font-size: 0.75rem; color: var(--muted); font-weight: 300; margin-left: 4px; }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 12px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      color: var(--ink);
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,90,42,0.12); }
+    input.input-error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(181,42,42,0.10); }
+    input::placeholder { color: var(--muted); }
+
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    @media (max-width: 380px) {
+      .row-3 { grid-template-columns: 1fr 1fr; }
+      .row-3 .field:last-child { grid-column: 1 / -1; }
     }
 
-    .metrics-grid{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:10px
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:hover  { background: #B04E24; }
+    button:active { transform: scale(0.98); }
+
+    #results { display: none; }
+
+    .alert {
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      border: 1.5px solid transparent;
+    }
+    .alert-error  { background: var(--red-lt);   border-color: rgba(181,42,42,0.25);  color: var(--red); }
+    .alert-warn   { background: var(--amber-lt);  border-color: rgba(181,122,26,0.25); color: var(--amber); }
+    .alert-ok     { background: var(--green-lt);  border-color: rgba(42,107,60,0.25);  color: var(--green); }
+    .alert strong { font-weight: 600; }
+
+    /* stacked warnings */
+    .warnings-block { margin-bottom: 12px; }
+    .warnings-block .alert { margin-bottom: 6px; }
+    .warnings-block .alert:last-child { margin-bottom: 0; }
+
+    .meta-line {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
     }
 
-    .metric-box{
-      text-align:center;
-      padding:10px;
-      background:var(--bg);
-      border:1px solid var(--border)
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 4px;
+    }
+    @media (max-width: 360px) { .metrics-grid { grid-template-columns: 1fr 1fr; } }
+
+    .metric-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+    .metric-val {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      color: var(--ink);
+      line-height: 1;
+      display: block;
+      /* prevent overflow for large numbers */
+      overflow-wrap: break-word;
+      word-break: break-all;
+    }
+    .metric-lbl {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 4px;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: block;
     }
 
-    .metric-val{font-size:1.4rem}
+    /* progress bar for supply */
+    .supply-bar-wrap {
+      margin-top: 14px;
+    }
+    .supply-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .supply-bar-bg {
+      height: 6px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .supply-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+    .supply-bar-fill.ok    { background: var(--green); }
+    .supply-bar-fill.warn  { background: var(--amber); }
+    .supply-bar-fill.empty { background: var(--red);   }
 
-    .alert{padding:12px;border-radius:8px;margin-bottom:10px}
-    .alert-error{background:var(--red-lt);color:var(--red)}
-    .alert-warn{background:var(--amber-lt);color:var(--amber)}
-    .alert-ok{background:var(--green-lt);color:var(--green)}
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 4px 0 16px;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding: 24px 0 8px;
+      line-height: 1.6;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.3s ease forwards; }
+
+    img.emoji {
+      height: 1.1em; width: 1.1em;
+      vertical-align: -0.15em;
+      display: inline-block;
+    }
+    .pill-icon img.emoji { height: 1em; width: 1em; vertical-align: -0.1em; }
   </style>
 </head>
-
 <body>
 <div class="page-wrap">
 
-<h1>Medication Refill 💊</h1>
+  <header>
+    <h1>Medication Refill<br>Calculator <span class="pill-icon">💊</span></h1>
+    <p class="subtitle">Fast &amp; private — no data saved or shared.</p>
+  </header>
 
-<div class="card">
-  <label>Date Last Filled</label>
-  <input id="lastFilled" placeholder="Nov 15, today, 11/15/2024">
+  <div class="card">
+    <p class="section-label">Prescription Details</p>
 
-  <label>Day Supply</label>
-  <input id="daySupply" type="number" value="30">
+    <div class="field">
+      <label for="lastFilled">Date Last Filled <span class="hint">(required)</span></label>
+      <input type="text" id="lastFilled"
+        placeholder="e.g. Nov 15, today, 11/15/2024"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    </div>
 
-  <label>Total Pills</label>
-  <input id="quantity" type="number">
+    <div class="row-3">
+      <div class="field">
+        <label for="daySupply">Day Supply</label>
+        <input type="number" id="daySupply" value="30" min="1" max="3650" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="quantity">Total Pills <span class="hint">(opt)</span></label>
+        <input type="number" id="quantity" value="" min="0" placeholder="—" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="takenPerDay">Pills/Day <span class="hint">(opt)</span></label>
+        <input type="number" id="takenPerDay" value="" min="0" step="0.25" placeholder="—" inputmode="decimal" />
+      </div>
+    </div>
 
-  <label>Pills/Day</label>
-  <input id="takenPerDay" type="number" step="0.5">
+    <button id="calcBtn" onclick="runCalc()">Calculate Refill</button>
+  </div>
 
-  <button onclick="runCalc()">Calculate</button>
-</div>
+  <div id="results"></div>
 
-<div id="results"></div>
+  <footer>
+    All calculations happen locally in your browser.<br>No information is transmitted or stored.
+  </footer>
 
 </div>
 
 <script>
+'use strict';
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+var MAX_QUANTITY    = 99999;   // pills — beyond this is a data-entry error
+var MAX_PPD        = 100;     // pills per day hard ceiling
+var MAX_SUPPLY     = 3650;    // 10 years
+var MAX_DAYS_OLD   = 3650;    // warn if fill date is older than this
+var SUPPLY_MISMATCH_THRESHOLD = 0.20; // 20% tolerance before warning
+
+// ─── Utility ─────────────────────────────────────────────────────────────────
 
 /**
- * Return today's date with time zeroed out
+ * Round to N decimal places using decimal arithmetic to avoid IEEE-754 drift.
+ * e.g. roundTo(2.005, 2) → 2.01 (not 2.00 from naive toFixed)
  */
-function today(){
-  let d=new Date();
-  return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+function roundTo(n, places) {
+  var factor = Math.pow(10, places);
+  return Math.round((n + Number.EPSILON) * factor) / factor;
 }
 
 /**
- * Add N days to a date
+ * Guard against NaN / Infinity / non-number — returns fallback (default 0).
  */
-function addDays(d,n){
-  let x=new Date(d);
-  x.setDate(x.getDate()+n);
-  return x;
+function safe(n, fallback) {
+  if (fallback === undefined) fallback = 0;
+  return (typeof n === 'number' && isFinite(n) && !isNaN(n)) ? n : fallback;
 }
 
 /**
- * Days between two dates
+ * Format a number for display: drop trailing ".0" but keep meaningful decimals.
+ * Handles large numbers with locale separator (e.g. 12,500.5).
  */
-function daysBetween(a,b){
-  return Math.round((b-a)/86400000);
+function fmtNum(n) {
+  if (!isFinite(n) || isNaN(n)) return '—';
+  // Use toLocaleString for thousands separators on large values
+  if (n >= 1000) {
+    return n.toLocaleString(undefined, {
+      maximumFractionDigits: 1,
+      minimumFractionDigits: 0
+    });
+  }
+  // For smaller numbers, show up to 2 decimal places but strip trailing zeros
+  var s = roundTo(n, 2).toString();
+  return s;
 }
 
-/**
- * Basic parsing (kept simple per your original)
- */
-function parseDate(s){
-  if(!s) throw Error("Enter date");
-  if(s.toLowerCase()==="today") return today();
+function fmtDate(dt) {
+  var months = ['Jan','Feb','Mar','Apr','May','Jun',
+                'Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[dt.getMonth()] + ' ' + dt.getDate() + ', ' + dt.getFullYear();
+}
 
-  let d=new Date(s);
-  if(isNaN(d)) throw Error("Invalid date format");
+function today() {
+  var d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
 
+function addDays(dt, n) {
+  var d = new Date(dt.getTime());
+  d.setDate(d.getDate() + n);
   return d;
 }
 
-/**
- * Safe number guard (prevents NaN / Infinity)
- */
-function safe(n){
-  return (isFinite(n) && !isNaN(n)) ? n : 0;
+function daysBetween(a, b) {
+  // Integer day difference; handles DST by using UTC noon trick
+  var msPerDay = 86400000;
+  var utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  var utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((utcB - utcA) / msPerDay);
+}
+
+function safeDate(y, m, d) {
+  if (y < 1900 || y > 2200) return null;
+  if (m < 1 || m > 12)      return null;
+  if (d < 1 || d > 31)      return null;
+  var dt = new Date(y, m - 1, d);
+  // Verify no overflow (e.g. Feb 30)
+  if (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) {
+    return dt;
+  }
+  return null;
+}
+
+// ─── Date Parsing Engine ─────────────────────────────────────────────────────
+
+var MONTH_MAP = {
+  january:1,  jan:1,
+  february:2, feb:2,
+  march:3,    mar:3,
+  april:4,    apr:4,
+  may:5,
+  june:6,     jun:6,
+  july:7,     jul:7,
+  august:8,   aug:8,
+  september:9,sep:9,   sept:9,
+  october:10, oct:10,
+  november:11,nov:11,
+  december:12,dec:12
+};
+
+// Common misspellings → canonical spelling
+var TYPO_MAP = [
+  [/\b(januray|janury|janaury|januarry)\b/gi,          'January'],
+  [/\b(febuary|feburary|febrary|februray|febraury)\b/gi,'February'],
+  [/\b(marhc|marcg|marh)\b/gi,                         'March'],
+  [/\b(arpil|apirl|paril|apri)\b/gi,                   'April'],
+  [/\b(juen|jne|junne)\b/gi,                            'June'],
+  [/\b(jully|juy|juky)\b/gi,                            'July'],
+  [/\b(auguts|agust|augst|augustt)\b/gi,                'August'],
+  [/\b(septmber|setember|septembar|septemper)\b/gi,     'September'],
+  [/\b(ocotber|octber|octobr|octobeer)\b/gi,            'October'],
+  [/\b(novmber|noveber|nvember|novembr|novembar)\b/gi,  'November'],
+  [/\b(decmber|deceber|dcember|decembr|decembar)\b/gi,  'December']
+];
+
+function normalizeInput(raw) {
+  var s = raw.trim();
+  // Apply typo fixes
+  for (var i = 0; i < TYPO_MAP.length; i++) {
+    s = s.replace(TYPO_MAP[i][0], TYPO_MAP[i][1]);
+  }
+  // Strip ordinal suffixes: 1st → 1, 2nd → 2, etc.
+  s = s.replace(/(\d+)(st|nd|rd|th)\b/gi, '$1');
+  // Normalize separators: dots and dashes between date numbers → slash
+  // Only when surrounded by digits (avoids corrupting "Dec-15-2024" style)
+  s = s.replace(/(\d)[.\-](\d)/g, '$1/$2');
+  // Collapse multiple spaces
+  s = s.replace(/\s+/g, ' ');
+  return s;
 }
 
 /**
- * Format date for UI
+ * parseDate: robust parser that handles ~60+ formats.
+ * Throws a user-friendly Error on failure.
+ * Returns a Date with time zeroed to midnight local.
  */
-function fmtDate(d){
-  return d.toLocaleDateString();
-}
-
-/**
- * Core calculation engine (hardened)
- */
-function calcMetrics(lastFilled, daySupply, quantity, takenPerDay){
-
-  let fillDate=parseDate(lastFilled);
-  let now=today();
-
-  // 🚨 Reject future dates
-  if(fillDate > now){
-    throw Error("Fill date cannot be in the future.");
+function parseDate(raw) {
+  if (!raw || !raw.trim()) {
+    throw new Error('Please enter the date your prescription was last filled.');
   }
 
-  let daysElapsed=Math.max(0,daysBetween(fillDate,now));
-  let currentDayNum=daysElapsed+1;
+  var now = today();
+  var s   = normalizeInput(raw);
+  var sl  = s.toLowerCase();
 
-  // --- Infer supply ---
-  let implied=null;
-  if(quantity && takenPerDay>0){
-    implied=quantity/takenPerDay;
+  // ── Relative keywords ────────────────────────────────────────────────────
+  if (sl === 'today' || sl === 'now')       return now;
+  if (sl === 'yesterday')                   return addDays(now, -1);
+  if (sl === 'tomorrow')                    return addDays(now,  1);
+  if (sl === 'last week')                   return addDays(now, -7);
+  if (sl === 'last month')                  return addDays(now, -30);
+
+  // "X days/weeks/months/years ago"
+  var agoMatch = sl.match(/^(\d+)\s*(day|week|month|year)s?\s*ago$/);
+  if (agoMatch) {
+    var n = parseInt(agoMatch[1], 10);
+    var unit = agoMatch[2];
+    if (!isFinite(n) || n < 0 || n > 36500) {
+      throw new Error('Relative date is out of range (max 100 years ago).');
+    }
+    if (unit === 'day')   return addDays(now, -n);
+    if (unit === 'week')  return addDays(now, -n * 7);
+    if (unit === 'month') return addDays(now, -Math.round(n * 30.4375));
+    if (unit === 'year')  return addDays(now, -Math.round(n * 365.25));
   }
 
-  let effective=daySupply;
-
-  if(implied && Math.abs(implied-daySupply)/daySupply>0.2){
-    effective=implied;
+  // "last Monday", "last Tuesday", etc.
+  var weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  var lastDayMatch = sl.match(/^last\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)$/);
+  if (lastDayMatch) {
+    var targetDay = weekdays.indexOf(lastDayMatch[1]);
+    var currentDay = now.getDay();
+    var diff = currentDay - targetDay;
+    if (diff <= 0) diff += 7;
+    return addDays(now, -diff);
   }
 
-  /**
-   * Smarter refill rule
-   */
-  function refillRule(ds){
-    if(ds<=7) return ds;
-    if(ds<=30) return ds-2;
-    return Math.floor(ds*0.9);
+  var yr = now.getFullYear();
+
+  // ── Numeric formats ──────────────────────────────────────────────────────
+
+  // MM/DD/YYYY  or  M/D/YYYY
+  var m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m1) {
+    var d = safeDate(+m1[3], +m1[1], +m1[2]);
+    if (d) return d;
+    // Try DD/MM/YYYY fallback if day > 12 (European entry)
+    if (+m1[1] > 12) {
+      d = safeDate(+m1[3], +m1[2], +m1[1]);
+      if (d) return d;
+    }
+    throw new Error('Date "' + raw + '" looks like MM/DD/YYYY but the values are out of range.');
   }
 
-  let refillDate=addDays(fillDate,refillRule(effective)-1);
-  let daysUntil=Math.max(0,daysBetween(now,refillDate));
+  // YYYY/MM/DD
+  var m1b = s.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (m1b) {
+    var d = safeDate(+m1b[1], +m1b[2], +m1b[3]);
+    if (d) return d;
+  }
 
-  let result={
-    fillDate,
-    daysElapsed,
-    currentDayNum,
-    refillDate,
-    daysUntil,
-    daySupply:Math.round(effective),
-    hasQty:false,
-    warning:null
-  };
+  // ISO  YYYY-MM-DD  (already had dashes normalized to slashes, but keep for edge case)
+  var m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m2) {
+    var d = safeDate(+m2[1], +m2[2], +m2[3]);
+    if (d) return d;
+  }
 
-  // --- Quantity math ---
-  if(quantity && takenPerDay>0){
+  // MM/DD/YY  (2-digit year: 00-49 → 2000s, 50-99 → 1900s)
+  var m3 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if (m3) {
+    var century = +m3[3] < 50 ? 2000 : 1900;
+    var d = safeDate(century + (+m3[3]), +m3[1], +m3[2]);
+    if (d) return d;
+  }
 
-    let taken=safe(daysElapsed*takenPerDay);
-    let left=safe(quantity-taken);
+  // MM/DD  (no year — assume current year, allow past only)
+  var m4 = s.match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (m4) {
+    var d = safeDate(yr, +m4[1], +m4[2]);
+    if (!d) d = safeDate(yr, +m4[2], +m4[1]); // try flipped
+    if (d) return d;
+  }
 
-    if(left<0) left=0;
+  // YYYYMMDD (compact ISO, 8 digits)
+  var m5 = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m5) {
+    var d = safeDate(+m5[1], +m5[2], +m5[3]);
+    if (d) return d;
+  }
 
-    let daysLeft=safe(left/takenPerDay);
+  // ── Month-name formats ───────────────────────────────────────────────────
 
-    result.hasQty=true;
-    result.taken=taken;
-    result.left=left;
-    result.daysLeft=daysLeft;
-
-    if(implied && Math.abs(implied-daySupply)/daySupply>0.2){
-      result.warning="⚠️ Inconsistent inputs — adjusted supply used";
+  var monthNum = null;
+  // Longest-match first to avoid 'mar' matching inside 'march'
+  var sortedNames = Object.keys(MONTH_MAP).sort(function(a, b) { return b.length - a.length; });
+  for (var i = 0; i < sortedNames.length; i++) {
+    var name = sortedNames[i];
+    // Word-boundary style check: preceded and followed by non-alpha
+    var idx = sl.indexOf(name);
+    if (idx !== -1) {
+      var before = idx === 0 ? '' : sl[idx - 1];
+      var after  = sl[idx + name.length] || '';
+      if (/[a-z]/.test(before) || /[a-z]/.test(after)) continue; // substring match, skip
+      monthNum = MONTH_MAP[name];
+      break;
     }
   }
 
-  // 🚨 Extreme warnings
-  if(daysElapsed>3650){
-    result.warning="⚠️ Very old prescription — verify inputs";
+  if (monthNum !== null) {
+    // Extract all standalone numbers from the string
+    var nums = [];
+    var numRe = /\b(\d{1,4})\b/g;
+    var nm;
+    while ((nm = numRe.exec(sl)) !== null) {
+      nums.push(parseInt(nm[1], 10));
+    }
+
+    // Try to identify year (4-digit) vs day (1-2 digit)
+    var parsedYear = yr;
+    var parsedDay  = null;
+
+    for (var i = 0; i < nums.length; i++) {
+      if (nums[i] >= 1900 && nums[i] <= 2200) {
+        parsedYear = nums[i];
+      } else if (nums[i] >= 1 && nums[i] <= 31) {
+        parsedDay = nums[i];
+      }
+    }
+
+    if (parsedDay !== null) {
+      var d = safeDate(parsedYear, monthNum, parsedDay);
+      if (d) return d;
+    }
+
+    // Month + year only (e.g. "Nov 2024") — use the 1st
+    if (parsedDay === null && parsedYear !== yr) {
+      var d = safeDate(parsedYear, monthNum, 1);
+      if (d) return d;
+    }
+
+    // Month name alone (e.g. just "November") — use current month/year
+    if (parsedDay === null) {
+      var d = safeDate(yr, monthNum, 1);
+      if (d) return d;
+    }
   }
 
-  if(result.daysLeft && result.daysLeft>3650){
-    result.warning="⚠️ Extremely large supply — check values";
+  // ── Fuzzy last-resort: try native Date only on strings that look "full"  ──
+  // Avoid using it for partial strings — it's unreliable across browsers.
+  // Only attempt if string is >= 8 chars and contains both a digit and a letter
+  if (s.length >= 8 && /\d/.test(s) && /[a-zA-Z]/.test(s)) {
+    var nativeAttempt = new Date(s);
+    if (!isNaN(nativeAttempt.getTime())) {
+      // Verify it's a sane year
+      var y = nativeAttempt.getFullYear();
+      if (y >= 1900 && y <= 2200) {
+        return new Date(y, nativeAttempt.getMonth(), nativeAttempt.getDate());
+      }
+    }
   }
 
-  return result;
+  throw new Error(
+    'Could not parse "' + raw.trim() + '". ' +
+    'Try formats like: 11/15/2024 · Nov 15 2024 · 2024-11-15 · yesterday · 30 days ago'
+  );
 }
 
+// ─── Input Validation ────────────────────────────────────────────────────────
+
 /**
- * Main UI runner with input guards
+ * Validate and sanitize a numeric field.
+ * Returns { value: Number|null, warnings: [] }
  */
-function runCalc(){
+function validateNumeric(raw, fieldName, opts) {
+  var warnings = [];
+  if (raw === null || raw === undefined || raw === '') return { value: null, warnings: warnings };
 
-  let lastFilled=document.getElementById("lastFilled").value;
+  var n = parseFloat(raw);
 
-  let daySupply=parseInt(document.getElementById("daySupply").value)||30;
-  let quantity=parseFloat(document.getElementById("quantity").value)||null;
-  let takenPerDay=parseFloat(document.getElementById("takenPerDay").value)||null;
+  if (isNaN(n)) {
+    warnings.push(fieldName + ' is not a valid number — ignored.');
+    return { value: null, warnings: warnings };
+  }
+  if (!isFinite(n)) {
+    warnings.push(fieldName + ' value is out of range — ignored.');
+    return { value: null, warnings: warnings };
+  }
+  if (n < 0) {
+    warnings.push(fieldName + ' cannot be negative — treated as 0.');
+    n = 0;
+  }
+  if (opts.max !== undefined && n > opts.max) {
+    warnings.push(fieldName + ' value (' + fmtNum(n) + ') exceeds the maximum (' + fmtNum(opts.max) + ') — clamped.');
+    n = opts.max;
+  }
+  if (opts.min !== undefined && n < opts.min && n !== 0) {
+    warnings.push(fieldName + ' value (' + fmtNum(n) + ') is below minimum (' + fmtNum(opts.min) + ') — clamped.');
+    n = opts.min;
+  }
+  if (opts.integer && !Number.isInteger(n)) {
+    // Silently round for integer-only fields
+    n = Math.round(n);
+  }
+  return { value: n, warnings: warnings };
+}
 
-  // 🔒 Clamp values
-  daySupply=Math.min(Math.max(daySupply,1),365);
-  if(quantity!==null) quantity=Math.min(quantity,10000);
-  if(takenPerDay!==null) takenPerDay=Math.min(takenPerDay,24);
+// ─── Refill Rule ─────────────────────────────────────────────────────────────
 
-  let m;
-  try{
-    m=calcMetrics(lastFilled,daySupply,quantity,takenPerDay);
-  }catch(e){
-    document.getElementById("results").innerHTML=
-      `<div class="alert alert-error">${e.message}</div>`;
+/**
+ * Returns the day-number (1-indexed from fill date) on which to refill.
+ * Adaptive rule:
+ *   ≤ 7 days   → exact last day
+ *   ≤ 30 days  → 2 days early
+ *   ≤ 90 days  → 5 days early
+ *   > 90 days  → 10% buffer (floor), min 7 days early
+ */
+function refillDayOffset(daySupply) {
+  if (daySupply <= 1)  return daySupply;
+  if (daySupply <= 7)  return daySupply;
+  if (daySupply <= 30) return daySupply - 2;
+  if (daySupply <= 90) return daySupply - 5;
+  return Math.max(daySupply - 7, Math.floor(daySupply * 0.90));
+}
+
+// ─── Core Calculation ────────────────────────────────────────────────────────
+
+/**
+ * Main calculation engine.
+ * Returns a result object — never throws for numeric issues, only for date errors.
+ *
+ * @param {string} lastFilled  - raw date string from user
+ * @param {number} daySupply   - already validated
+ * @param {number|null} quantity     - total pills (nullable)
+ * @param {number|null} takenPerDay  - pills/day (nullable)
+ * @returns {{ ...metrics, warnings: string[] }}
+ */
+function calcMetrics(lastFilled, daySupply, quantity, takenPerDay) {
+  var warnings = [];
+
+  var fillDate = parseDate(lastFilled); // may throw
+  var todayDate = today();
+
+  // ── Date sanity checks ───────────────────────────────────────────────────
+
+  var daysElapsed = daysBetween(fillDate, todayDate);
+
+  if (daysElapsed < 0) {
+    throw new Error(
+      'Fill date (' + fmtDate(fillDate) + ') is in the future. ' +
+      'Please enter the date you last picked up your prescription.'
+    );
+  }
+
+  if (daysElapsed > MAX_DAYS_OLD) {
+    warnings.push(
+      'Fill date is over ' + Math.round(MAX_DAYS_OLD / 365) + ' years ago. ' +
+      'Please verify the date is correct.'
+    );
+  }
+
+  // ── Supply reconciliation ────────────────────────────────────────────────
+
+  var effectiveSupply = daySupply; // what we use for refill date math
+
+  if (quantity !== null && takenPerDay !== null && takenPerDay > 0) {
+    var impliedSupply = roundTo(quantity / takenPerDay, 4);
+
+    if (isFinite(impliedSupply) && impliedSupply > 0) {
+      var delta = Math.abs(impliedSupply - daySupply) / daySupply;
+
+      if (delta > SUPPLY_MISMATCH_THRESHOLD) {
+        effectiveSupply = impliedSupply;
+        warnings.push(
+          'Entered day supply (' + daySupply + ') and pill count÷dose (' +
+          fmtNum(impliedSupply) + ' days) differ by ' +
+          Math.round(delta * 100) + '%. ' +
+          'Using the calculated value (' + fmtNum(impliedSupply) + ' days).'
+        );
+      }
+    }
+  } else if (quantity !== null && takenPerDay === null) {
+    // Have quantity but no dose — we can still track pills, just can't verify supply
+  } else if (takenPerDay !== null && quantity === null) {
+    // Have dose but no quantity — can compute days remaining from supply
+  }
+
+  if (!isFinite(effectiveSupply) || effectiveSupply <= 0) {
+    warnings.push('Could not determine a valid supply duration. Using entered day supply.');
+    effectiveSupply = daySupply;
+  }
+
+  // ── Refill date ──────────────────────────────────────────────────────────
+
+  var refillOffset = refillDayOffset(effectiveSupply);  // days from fill date
+  var refillDate   = addDays(fillDate, refillOffset - 1);
+  var daysUntil    = Math.max(0, daysBetween(todayDate, refillDate));
+  var currentDayNum = daysElapsed + 1;
+  var pctUsed       = Math.min(100, roundTo((daysElapsed / effectiveSupply) * 100, 1));
+
+  // ── Quantity tracking ────────────────────────────────────────────────────
+
+  var quantityInfo = null;
+
+  if (quantity !== null && takenPerDay !== null && takenPerDay > 0) {
+    // Use decimal arithmetic to avoid drift over long periods
+    var taken    = roundTo(daysElapsed * takenPerDay, 2);
+    var left     = roundTo(Math.max(0, quantity - taken), 2);
+    var daysLeft = roundTo(left / takenPerDay, 2);
+
+    // Sanity: if taken > quantity, clamp and warn
+    if (taken > quantity + 0.001) {
+      warnings.push(
+        'Expected consumption (' + fmtNum(taken) + ' pills) exceeds total quantity (' +
+        fmtNum(quantity) + '). Supply may be exhausted.'
+      );
+      taken = quantity;
+      left  = 0;
+      daysLeft = 0;
+    }
+
+    // Warn if calculated days left vastly exceeds entered supply
+    if (daysLeft > effectiveSupply * 1.5) {
+      warnings.push(
+        'Calculated days remaining (' + fmtNum(daysLeft) + ') is much larger than the ' +
+        'entered day supply (' + daySupply + '). Check pill count and dose.'
+      );
+    }
+
+    var pctLeft = quantity > 0 ? Math.min(100, roundTo((left / quantity) * 100, 1)) : 0;
+
+    quantityInfo = {
+      taken:    taken,
+      left:     left,
+      daysLeft: daysLeft,
+      pctLeft:  pctLeft
+    };
+  } else if (quantity !== null && takenPerDay === null) {
+    // No dose — just show the raw count, no math possible
+    quantityInfo = {
+      taken:    null,
+      left:     null,
+      daysLeft: null,
+      pctLeft:  null,
+      rawQty:   quantity
+    };
+  } else if (takenPerDay !== null && quantity === null) {
+    // Dose without count — project from supply
+    var daysRemaining = Math.max(0, roundTo(effectiveSupply - daysElapsed, 2));
+    var expectedLeft  = roundTo(daysRemaining * takenPerDay, 2);
+
+    quantityInfo = {
+      taken:    roundTo(daysElapsed * takenPerDay, 2),
+      left:     expectedLeft,
+      daysLeft: daysRemaining,
+      pctLeft:  Math.min(100, roundTo((daysRemaining / effectiveSupply) * 100, 1)),
+      projected: true  // flag: based on supply, not pill count
+    };
+  }
+
+  // ── Extreme supply warning ───────────────────────────────────────────────
+
+  if (effectiveSupply > 365) {
+    warnings.push('Supply duration exceeds 1 year. If this is intentional, results are still accurate.');
+  }
+
+  return {
+    fillDate:      fillDate,
+    todayDate:     todayDate,
+    daysElapsed:   daysElapsed,
+    currentDayNum: currentDayNum,
+    refillDate:    refillDate,
+    daysUntil:     daysUntil,
+    daySupply:     Math.round(effectiveSupply),
+    pctUsed:       pctUsed,
+    quantityInfo:  quantityInfo,
+    warnings:      warnings
+  };
+}
+
+// ─── UI Rendering ─────────────────────────────────────────────────────────────
+
+function clearInputErrors() {
+  var inputs = document.querySelectorAll('input');
+  for (var i = 0; i < inputs.length; i++) {
+    inputs[i].classList.remove('input-error');
+  }
+}
+
+function runCalc() {
+  clearInputErrors();
+
+  var lastFilledRaw  = document.getElementById('lastFilled').value.trim();
+  var daySupplyRaw   = document.getElementById('daySupply').value.trim();
+  var quantityRaw    = document.getElementById('quantity').value.trim();
+  var takenPerDayRaw = document.getElementById('takenPerDay').value.trim();
+
+  var el = document.getElementById('results');
+  var allWarnings = [];
+
+  // ── Validate: required date ──────────────────────────────────────────────
+  if (!lastFilledRaw) {
+    document.getElementById('lastFilled').classList.add('input-error');
+    el.style.display = 'block';
+    el.innerHTML = '<div class="alert alert-error fade-up">⚠️ Please enter the date your prescription was last filled.</div>';
     return;
   }
 
-  let html="";
+  // ── Validate: day supply ─────────────────────────────────────────────────
+  var dsResult = validateNumeric(daySupplyRaw || '30', 'Day supply', {
+    min: 1, max: MAX_SUPPLY, integer: true
+  });
+  var daySupply = dsResult.value !== null ? dsResult.value : 30;
+  allWarnings = allWarnings.concat(dsResult.warnings);
 
-  if(m.warning){
-    html+=`<div class="alert alert-warn">${m.warning}</div>`;
+  // ── Validate: quantity ───────────────────────────────────────────────────
+  var qtyResult = validateNumeric(quantityRaw, 'Total pills', {
+    min: 0, max: MAX_QUANTITY
+  });
+  var quantity = qtyResult.value;
+  allWarnings = allWarnings.concat(qtyResult.warnings);
+
+  // ── Validate: pills per day ──────────────────────────────────────────────
+  var tpdResult = validateNumeric(takenPerDayRaw, 'Pills per day', {
+    min: 0, max: MAX_PPD
+  });
+  var takenPerDay = tpdResult.value;
+  if (takenPerDay === 0) takenPerDay = null; // zero dose is meaningless
+  allWarnings = allWarnings.concat(tpdResult.warnings);
+
+  // ── Run core calculation ─────────────────────────────────────────────────
+  var m;
+  try {
+    m = calcMetrics(lastFilledRaw, daySupply, quantity, takenPerDay);
+  } catch (e) {
+    document.getElementById('lastFilled').classList.add('input-error');
+    el.style.display = 'block';
+    el.innerHTML = '<div class="alert alert-error fade-up">⚠️ ' + escHtml(e.message) + '</div>';
+    return;
   }
 
-  if(m.daysUntil===0){
-    html+=`<div class="alert alert-error">Refill due now</div>`;
-  }else if(m.daysUntil<3){
-    html+=`<div class="alert alert-warn">Refill soon (${m.daysUntil} days)</div>`;
-  }else{
-    html+=`<div class="alert alert-ok">Refill in ${m.daysUntil} days</div>`;
+  allWarnings = allWarnings.concat(m.warnings);
+
+  // ── Build HTML ───────────────────────────────────────────────────────────
+  var html = '';
+
+  // Warnings block (all non-critical notices)
+  if (allWarnings.length > 0) {
+    html += '<div class="warnings-block fade-up">';
+    for (var i = 0; i < allWarnings.length; i++) {
+      html += '<div class="alert alert-warn">⚠️ ' + escHtml(allWarnings[i]) + '</div>';
+    }
+    html += '</div>';
   }
 
-  html+=`
-  <div class="card">
-    <div class="metrics-grid">
-      <div class="metric-box"><div class="metric-val">${m.daysUntil}</div>Days Until</div>
-      <div class="metric-box"><div class="metric-val">${m.currentDayNum}</div>Day #</div>
-      <div class="metric-box"><div class="metric-val">${m.daysElapsed}</div>Elapsed</div>
-    </div>
-    <p>Filled: ${fmtDate(m.fillDate)}</p>
-    <p>Refill: ${fmtDate(m.refillDate)}</p>
-  </div>`;
-
-  if(m.hasQty){
-    html+=`
-    <div class="card">
-      <div class="metrics-grid">
-        <div class="metric-box">${m.taken.toFixed(1)} Taken</div>
-        <div class="metric-box">${m.left.toFixed(1)} Left</div>
-        <div class="metric-box">${m.daysLeft.toFixed(1)} Days Left</div>
-      </div>
-    </div>`;
+  // Refill status alert
+  if (m.daysUntil === 0) {
+    html += '<div class="alert alert-error fade-up">🔴 Refill is <strong>due today or overdue</strong>. Target refill date was ' + fmtDate(m.refillDate) + '.</div>';
+  } else if (m.daysUntil <= 3) {
+    html += '<div class="alert alert-warn fade-up">⏳ Refill due in <strong>' + m.daysUntil + ' day' + (m.daysUntil === 1 ? '' : 's') + '</strong> — on ' + fmtDate(m.refillDate) + '.</div>';
+  } else if (m.daysUntil <= 7) {
+    html += '<div class="alert alert-warn fade-up">📅 Refill due in <strong>' + m.daysUntil + ' days</strong> — on ' + fmtDate(m.refillDate) + '.</div>';
+  } else {
+    html += '<div class="alert alert-ok fade-up">✅ Refill due in <strong>' + m.daysUntil + ' days</strong> — on ' + fmtDate(m.refillDate) + '.</div>';
   }
 
-  document.getElementById("results").innerHTML=html;
+  // ── Refill timeline card ─────────────────────────────────────────────────
+  html += '<div class="card fade-up">';
+  html += '<p class="section-label">Refill Timeline</p>';
+  html += '<hr>';
+  html += '<div class="metrics-grid">';
+  html += metricBox(m.daysUntil, 'Days Until Refill');
+  html += metricBox('Day ' + m.currentDayNum, 'of ' + m.daySupply);
+  html += metricBox(m.daysElapsed, 'Days Elapsed');
+  html += '</div>';
+
+  // Supply usage progress bar
+  var barClass = m.pctUsed >= 90 ? 'empty' : m.pctUsed >= 70 ? 'warn' : 'ok';
+  html += '<div class="supply-bar-wrap">';
+  html += '<div class="supply-bar-label"><span>Supply used</span><span>' + m.pctUsed + '%</span></div>';
+  html += '<div class="supply-bar-bg"><div class="supply-bar-fill ' + barClass + '" style="width:' + m.pctUsed + '%"></div></div>';
+  html += '</div>';
+
+  html += '<p class="meta-line" style="margin-top:14px">Filled: ' + fmtDate(m.fillDate) + ' &nbsp;·&nbsp; Target refill: ' + fmtDate(m.refillDate) + '</p>';
+  html += '</div>';
+
+  // ── Supply status card ───────────────────────────────────────────────────
+  if (m.quantityInfo !== null) {
+    var qi = m.quantityInfo;
+    html += '<div class="card fade-up">';
+    html += '<p class="section-label">Supply Status' + (qi.projected ? ' <span style="font-size:0.65rem;color:var(--muted)">(projected from supply)</span>' : '') + '</p>';
+    html += '<hr>';
+
+    if (qi.taken !== null && qi.left !== null && qi.daysLeft !== null) {
+      html += '<div class="metrics-grid">';
+      html += metricBox(fmtNum(qi.taken), 'Should Have Taken');
+      html += metricBox(fmtNum(qi.left),  'Should Have Left');
+      html += metricBox(fmtNum(qi.daysLeft), 'Days of Supply Left');
+      html += '</div>';
+
+      // Pill supply progress bar
+      if (qi.pctLeft !== null) {
+        var pctLeft = qi.pctLeft;
+        var pillBarClass = pctLeft <= 10 ? 'empty' : pctLeft <= 25 ? 'warn' : 'ok';
+        html += '<div class="supply-bar-wrap">';
+        html += '<div class="supply-bar-label"><span>Pills remaining</span><span>' + pctLeft + '%</span></div>';
+        html += '<div class="supply-bar-bg"><div class="supply-bar-fill ' + pillBarClass + '" style="width:' + pctLeft + '%"></div></div>';
+        html += '</div>';
+      }
+    } else if (qi.rawQty !== undefined) {
+      // Only have quantity, no dose
+      html += '<p style="font-size:0.9rem;color:var(--muted)">You have <strong style="color:var(--ink)">' + fmtNum(qi.rawQty) + ' pills</strong> dispensed. Add a pills/day value to see consumption tracking.</p>';
+    }
+
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+  el.style.display = 'block';
+
+  // Render emoji
+  if (typeof twemoji !== 'undefined') {
+    twemoji.parse(el, { folder: 'svg', ext: '.svg' });
+  }
+
+  // Smooth scroll on mobile
+  setTimeout(function() {
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function metricBox(val, lbl) {
+  return '<div class="metric-box"><span class="metric-val">' + val + '</span><span class="metric-lbl">' + lbl + '</span></div>';
+}
+
+/** Basic XSS guard for user-supplied strings in HTML context */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') runCalc();
+});
+
+if (typeof twemoji !== 'undefined') {
+  twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
+}
 </script>
 </body>
 </html>
