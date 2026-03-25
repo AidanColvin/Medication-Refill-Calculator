@@ -53,14 +53,15 @@
       text-align: left;
     }
     .pill-icon {
-      font-size: 2rem;
-      display: block;
-      margin-bottom: 8px;
+      display: inline;
+      font-size: inherit;
+      margin-left: 0.2em;
+      line-height: 1;
     }
     h1 {
       font-family: 'DM Serif Display', serif;
       font-size: clamp(1.7rem, 5vw, 2.2rem);
-      line-height: 1.15;
+      line-height: 1.2;
       color: var(--ink);
       margin-bottom: 8px;
     }
@@ -249,9 +250,9 @@
       display: inline-block;
     }
     .pill-icon img.emoji {
-      height: 2rem;
-      width: 2rem;
-      vertical-align: middle;
+      height: 1em;
+      width: 1em;
+      vertical-align: -0.1em;
     }
   </style>
 </head>
@@ -259,8 +260,7 @@
 <div class="page-wrap">
 
   <header>
-    <span class="pill-icon">💊</span>
-    <h1>Medication Refill<br>Calculator</h1>
+    <h1>Medication Refill<br>Calculator <span class="pill-icon">💊</span></h1>
     <p class="subtitle">Fast &amp; private — no data saved or shared.</p>
   </header>
 
