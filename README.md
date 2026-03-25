@@ -1,13 +1,3 @@
-# Medication-Refill-Calculator
-
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Privacy: Stateless](https://img.shields.io/badge/Privacy-100%25_Stateless-success.svg)](#security--privacy)
-
-A highly optimized, fully stateless web application designed to track medication refills with precision. It features an intelligent date-parsing engine, complete quantity calculations, and proactive refill alerts. Built for speed, accuracy, and absolute user privacy.
-
----
 # Medication Refill Calculator
 
 [![Frontend: Vanilla JS](https://img.shields.io/badge/frontend-vanilla_js-orange.svg)](#architecture)
